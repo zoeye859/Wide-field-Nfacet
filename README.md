@@ -3,7 +3,7 @@ Jupyter notebooks to demonstrate two wide field imaging algorithms: N-Faceting a
 
 ## Contact
 
-If you cannot get in touch with me (very likely due to my work placement), consider contacting Steve Gull and Sze M Tan (szemengtan@gmail.com). 
+haoyang.ye AT cantab.net
 
 ## Publication
 
@@ -13,7 +13,6 @@ Description of the algorithms can be found in my thesis (https://doi.org/10.1786
 
 Please consult for reference. 
 
-Due to my upcomming work replacement, I cannot update this repo as I wish, but there are certainly many things to check and update. Please report any mistakes or suggest improvements. Thank you!
 
 ## Reference
 
