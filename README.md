@@ -1,6 +1,11 @@
 # Wide-field-Nfacet
 Jupyter notebooks to demonstrate two wide field imaging algorithms: N-Faceting and the improved W-stacking
 
+For the improved W-stacking method:
+
+please refer to *W-stacking-improved Optimised (works for both odd and even W).ipynb*
+
+
 ## Contact
 
 haoyang.ye AT cantab.net

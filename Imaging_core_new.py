@@ -69,8 +69,12 @@ def cal_grid_uv(u, W, im_size, X_max, X_min, h, M, x0=0.25):
     u_grid = u * 2 * (X_max - X_min) + im_size//2
     C_u = []
     for k in range(len(u)):
-        tempu = u_grid[k] - np.floor(u_grid[k])
-        C_u += [calc_C(h, x0, np.asarray([tempu]), W)]
+        if W % 2 == 0:
+            tempu = u_grid[k] - np.floor(u_grid[k])
+            C_u += [calc_C(h, x0, np.asarray([tempu]), W)]
+        else:
+            tempu = u_grid[k] - np.around(u_grid[k])
+            C_u += [calc_C(h, x0, np.asarray([tempu+0.5]), W)]
     t_stop = process_time()   
     print("Elapsed time during the u/v gridding value calculation in seconds:", t_stop-t_start)  
     return C_u, u_grid
@@ -91,14 +95,18 @@ def cal_grid_w(w, w_values, idx, dw, W, h, M, x0=0.25):
     """
     t_start = process_time() 
     C_w = []
+    idx_floor = find_floorw(w_values, w)
     for k in range(len(w)):
-        tempw = (w[k] - w_values[idx[k]])/dw
-        C_w += [calc_C(h, x0, np.asarray([tempw+0.5]), W)]
+        if W % 2 == 0:
+            tempw = (w[k] - w_values[idx_floor[k]])/dw
+            C_w += [calc_C(h, x0, np.asarray([tempw]), W)]
+        else:
+            tempw = (w[k] - w_values[idx[k]])/dw
+            C_w += [calc_C(h, x0, np.asarray([tempw+0.5]), W)]
     t_stop = process_time()   
     print("Elapsed time during the w gridding value calculation in seconds:", t_stop-t_start)  
     return C_w
-
-
+    
 def grid_w(V, u, v, w, C_w, w_values, W, Nw_2R, idx):
     """
     Grid on w-axis
@@ -131,6 +139,7 @@ def grid_w(V, u, v, w, C_w, w_values, W, Nw_2R, idx):
             w_plane = idx_floor[k]
         j = 0
         for n in range(-W//2+1,-W//2+1+W):
+            #print (k, w_plane+n, C_wk[j,0], V[k])
             V_wgrid[w_plane+n] += [C_wk[j,0] * V[k]]
             u_wgrid[w_plane+n] += [u[k]]
             v_wgrid[w_plane+n] += [v[k]]
@@ -146,6 +155,41 @@ def grid_w(V, u, v, w, C_w, w_values, W, Nw_2R, idx):
     t_stop = process_time()   
     print("Elapsed time during the w-gridding calculation in seconds:", t_stop-t_start)   
     return V_wgrid, u_wgrid, v_wgrid, beam_wgrid
+
+def grid_uv(V_update, u_update, v_update, beam_update, W, im_size, X_max, X_min, Y_max, Y_min, h, M):
+    """
+    Grid on u-axis and v-axis
+    Args:
+        V_update (np.narray): visibility data on the certain w-plane
+        u_update (np.narray): u of the (u,v,w) coordinates on the certain w-plane
+        v_update (np.narray): v of the (u,v,w) coordinates on the certain w-plane
+        w_update (np.narray): w of the (u,v,w) coordinates on the certain w-plane
+        W (int): support width of the gridding function
+    """
+    V_grid = np.zeros((im_size,im_size),dtype = np.complex_)
+    B_grid = np.zeros((im_size,im_size),dtype = np.complex_) 
+    C_u, u_grid = cal_grid_uv(u_update, W, im_size, X_max, X_min, h, M, x0=0.25)
+    C_v, v_grid = cal_grid_uv(v_update, W, im_size, Y_max, Y_min, h, M, x0=0.25)
+    for k in range(0,len(V_update)):
+        C_uk = C_u[k]
+        C_vk = C_v[k]
+        if W % 2 == 1:
+            u_index = np.int(np.around(u_grid[k]))
+            v_index = np.int(np.around(v_grid[k]))
+        else:
+            u_index = np.int(np.floor(u_grid[k]))
+            v_index = np.int(np.floor(v_grid[k]))
+        u_k=0
+        for m in range(-W//2+1,-W//2+1+W):
+            v_k=0
+            for n in range(-W//2+1,-W//2+1+W):
+                V_grid[u_index+m,v_index+n] += C_uk[u_k] * C_vk[v_k] * V_update[k]
+                B_grid[u_index+m,v_index+n] += C_uk[u_k] * C_vk[v_k] * beam_update[k]
+                v_k+=1
+            u_k+=1
+    return V_grid, B_grid
+
+
 
 def image_crop(I, im_size, x0=0.25):
     """
