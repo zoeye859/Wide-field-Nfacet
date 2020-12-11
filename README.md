@@ -1,10 +1,17 @@
 # Wide-field-Nfacet
 Jupyter notebooks to demonstrate two wide field imaging algorithms: N-Faceting and the improved W-stacking
 
-For the improved W-stacking method:
+## 1. Improved W-stacking method:
 
-please refer to *W-stacking-improved Optimised (works for both odd and even W).ipynb*
+Please refer to *W-stacking-improved Optimised (works for both odd and even W).ipynb*
 
+The *W-stacking-improved Optimised* series jupyter notebooks are ready for you to try out. You can even exchange the gridding function as you like.
+
+The default gridding function used is still our least-misfit gridding function. See paper https://doi.org/10.1093/mnras/stz2970 and Github repo https://github.com/SzeMengTan/OptimalGridding for reference.
+
+## 2. N-Faceting method:
+
+The paper and codes are on the way.
 
 ## Contact
 
