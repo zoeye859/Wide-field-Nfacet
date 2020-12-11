@@ -528,3 +528,12 @@ def I_rotation(size,I):
         for j in range(size):
             I_r[size-1-i,j] = I[j,i] 
     return I_r
+
+def pb_cor(pbcor,size,I):
+    """
+    Primary beam correction
+    """
+    for i in range(size):
+        for j in range(size):
+            I[i,j] = I[i,j]/pbcor[i,j]
+    return I
