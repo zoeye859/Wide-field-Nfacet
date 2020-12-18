@@ -344,6 +344,35 @@ def Wplanes(W, X_max, Y_max, w, x0=0.25):
     print ("We will have", Nw_2R, "w-planes")   
     return Nw_2R, w_values, dw
 
+def xy_correct_old(I, h, im_size, W, M, x0=0.25):
+    """
+      Rescale the obtained image 
+    Args:
+        W (int): support width of the gridding function
+        im_size (int): the image size, it is to be noted that this is before the image cropping
+        opt_func (np.ndarray): The vector of grid correction values sampled on [0,x0) to optimize
+        I (np.narray): summed up image
+    Return:
+        I_xycorrected (np.narray): corrected image on x,y axis
+    """ 
+    I_size = int(im_size*2*x0)
+    nu, x = make_evaluation_grids(W, M, I_size)
+    gridder = calc_gridder(h, x0, nu, W, M)
+    grid_correction = gridder_to_grid_correction(gridder, nu, x, W)
+    h_map = np.zeros(im_size, dtype=float)
+    h_map[I_size:] = grid_correction[:I_size]
+    h_map[:I_size] = grid_correction[:0:-1]
+    temp = np.delete(h_map,np.s_[0:I_size//2],0)
+    index_x = int(I_size * 1.5)
+    index_y = int(I_size * 1.5)
+    Cor_gridx = np.delete(temp,np.s_[I_size:index_x],0)
+    Cor_gridy = np.delete(temp,np.s_[I_size:index_y],0)
+    I_xycorrected = np.zeros([I_size,I_size],dtype = np.complex_)
+    for i in range(0,I_size):
+        for j in range(0,I_size):
+            I_xycorrected[i,j] = I[i,j] * Cor_gridx[i] * Cor_gridy[j]
+    return I_xycorrected
+
 def xy_correct(I, opt_func, im_size, x0=0.25):
     """
       Rescale the obtained image
