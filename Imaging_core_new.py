@@ -3,6 +3,36 @@ from time import process_time
 from Gridding_core import *
 np.set_printoptions(precision=16)
 
+class LookupTable:
+    """
+    Create lookup table for polynomial interpolation of specified degree. The
+    function to be interpolated is evaluated at points in [xstart+k*dx] for 
+    k=0,1,...,N-1 and the values are in f[0], f[1],...,f[N-1]
+    Written by Sze M. Tan
+    """
+    def __init__(self, xstart, dx, fvals, degree):
+        self.xstart = xstart
+        self.dx = dx
+        self.degree = degree
+        fcopy = np.array(fvals, dtype=float)
+        self.table = [fcopy]
+        for d in range(degree):
+            fcopy = np.diff(fcopy, 1)
+            self.table.append(fcopy)
+        
+    def interp(self, x):
+        loc = (x-self.xstart)/self.dx
+        pt = np.asarray(np.floor(loc), dtype=np.int)
+        if np.any((pt<0) | (pt>=len(self.table[self.degree]))):
+            raise ValueError("Outside range of lookup table")
+        ft = loc - pt
+        # Perform polynomial interpolation
+        weights = self.table[0][pt].copy()
+        factor = 1
+        for k in range(self.degree):
+            factor *= (ft - k) / (k + 1)
+            weights += self.table[k + 1][pt] * factor
+        return weights
 
 def Visibility_minusw(V,u,v,w):
     '''
@@ -448,7 +478,7 @@ def int5(h_x, iz, zin, step):
         ans = a0 + a1*zin + a2*zin*zin + a3*zin*zin*zin + a4*zin*zin*zin*zin +a5*zin*zin*zin*zin*zin
     return ans
 
-def z_correct_cal(X_min, X_max, Y_min, Y_max, dw, h, im_size, W, M, x0):
+def z_correct_cal_old(X_min, X_max, Y_min, Y_max, dw, h, im_size, W, M, x0):
     """
     Return:
         Cor_gridz (np.narray): correcting function on z-axis
@@ -479,12 +509,50 @@ def z_correct_cal(X_min, X_max, Y_min, Y_max, dw, h, im_size, W, M, x0):
     Cor_gridz = image_crop(fmap, im_size, x0)
     return Cor_gridz
 
+
+def setup_lookup_table(opt_func, Nfine, degree, x0=0.25):
+    """
+    Updated by Sze M. Tan
+    """
+    xfine = np.linspace(0.0, x0*(1 + degree/Nfine), Nfine)
+    hfine = get_grid_correction(opt_func, xfine)
+    lut = LookupTable(xfine.min(), xfine[1]-xfine[0], hfine, degree)
+    return lut
+
+def z_correct_cal(lut, X_min, X_max, Y_min, Y_max, dw, h, im_size, W, M, x0):
+    """
+    Updated by Sze M. Tan
+    Return:
+        Cor_gridz (np.narray): correcting function on z-axis
+    """ 
+    I_size = int(im_size*2*x0)
+    nu, x = make_evaluation_grids(W, M, I_size)
+    gridder = calc_gridder(h, x0, nu, W, M)
+    grid_correction = gridder_to_grid_correction(gridder, nu, x, W)
+    h_map = np.zeros(im_size, dtype=float)
+    h_map[I_size:] = grid_correction[:I_size]
+    h_map[:I_size] = grid_correction[:0:-1]
+    xrange = X_max - X_min
+    yrange = Y_max - Y_min
+    ny = im_size
+    nx = im_size
+    l_map = np.linspace(X_min, X_max, nx+1)[:nx]/(2*x0)
+    m_map = np.linspace(Y_min, Y_max, ny+1)[:ny]/(2*x0)
+    ll, mm = np.meshgrid(l_map, m_map)
+    # Do not allow NaN or values outside the x0 for the optimal function
+    z = dw*(1. - np.sqrt(np.maximum(0.0, 1. - ll**2 - mm**2)))
+    z[z > x0] = x0 
+
+    fmap = lut.interp(z)        
+    Cor_gridz = image_crop(fmap, im_size, x0)
+    return Cor_gridz
+
+
 def z_correct_cal_other(X_min, X_max, Y_min, Y_max, dw, im_size, W, C, x0=0.25):
     """
     Return:
         Cor_gridz (np.narray): correcting function on z-axis using other gridding function, such as spheroidal functrion
     """ 
-    I_size = int(im_size*2*x0)
     M = 32
     nu, x = make_evaluation_grids(W, M, im_size/2)
     gridder = np.asarray([C(nu[i]) for i in range(len(nu))])
