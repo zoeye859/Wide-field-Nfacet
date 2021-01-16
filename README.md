@@ -3,11 +3,14 @@ Jupyter notebooks to demonstrate two wide field imaging algorithms: N-Faceting a
 
 ## 1. Improved W-stacking method:
 
-Newest: now the correcting function on z-axis can be calculated more accurately - adequate interpolation of the gridding correction function with your nominated number of orders -- Sze's input 
+**updated on 16 January 2021**: now we have decreased the number of w-planes by a factor of 2. -- Andre Offringa's suggestion 
+
+Please refer to *W-stacking-improved Optimised with offsets (works for both odd and even W).ipynb*
+
+**updated on 31 December 2020**: now the correcting function on z-axis can be calculated more accurately - adequate interpolation of the gridding correction function with your nominated number of orders -- Sze's input 
 
 Please refer to *Sze - New Interpolation on Z - W-stacking-improved Optimised (works for both odd and even W).ipynb*
 
-**Above updated on 31 December 2020**
 
 Please refer to *W-stacking-improved Optimised (works for both odd and even W).ipynb*
 
