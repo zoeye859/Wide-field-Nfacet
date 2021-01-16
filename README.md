@@ -3,21 +3,21 @@ Jupyter notebooks to demonstrate two wide field imaging algorithms: N-Faceting a
 
 ## 1. Improved W-stacking method:
 
-(&#x1F34E;) **Updated on 16 January 2021**: now we have decreased the number of w-planes by a factor of 2. -- Andre Offringa's suggestion 
+&#x1F34E; **Updated on 16 January 2021**: now we have decreased the number of w-planes by a factor of 2. -- Andre Offringa's suggestion 
 
 Please refer to *W-stacking-improved Optimised with offsets (works for both odd and even W).ipynb*
 
 
-(&#x1F34E;) **Updated on 31 December 2020**: now the correcting function on z-axis can be calculated more accurately - adequate interpolation of the gridding correction function with your nominated number of orders -- Sze's input 
+&#x1F34E; **Updated on 31 December 2020**: now the correcting function on z-axis can be calculated more accurately - adequate interpolation of the gridding correction function with your nominated number of orders -- Sze's input 
 
 Please refer to *Sze - New Interpolation on Z - W-stacking-improved Optimised (works for both odd and even W).ipynb*
 
 
-(&#x1F34E;) **Updated early December 2020**: Please refer to *W-stacking-improved Optimised (works for both odd and even W).ipynb*
+&#x1F34E; **Updated early December 2020**: Please refer to *W-stacking-improved Optimised (works for both odd and even W).ipynb*
 
 The *W-stacking-improved Optimised* series jupyter notebooks are ready for you to try out. You can even exchange the gridding function as you like.
 
-(&#x1F4D9;): The default gridding function used is still our least-misfit gridding function. See paper https://doi.org/10.1093/mnras/stz2970 and Github repo https://github.com/SzeMengTan/OptimalGridding for reference.
+&#x1F4D9; The default gridding function used is still our least-misfit gridding function. See paper https://doi.org/10.1093/mnras/stz2970 and Github repo https://github.com/SzeMengTan/OptimalGridding for reference.
 
 
 
