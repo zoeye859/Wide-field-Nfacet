@@ -109,6 +109,36 @@ def cal_grid_uv(u, W, im_size, X_max, X_min, h, M, x0=0.25):
     print("Elapsed time during the u/v gridding value calculation in seconds:", t_stop-t_start)  
     return C_u, u_grid
 
+def calcWgrid_offset(W, X_max, Y_max, w, x0=0.25, symm=True):
+    """
+    Calculate the layers of the w-stack by Sze
+    Args:
+        W (int): size of gridding convolution function
+        X_max (float): Maximum direction cosine in L direction in final map
+        Y_max (float): Maximum direction cosine in M direction in final map
+        w (float array): w values (in wavelengths) of visibilities
+        x0: portion of map to be retained
+        symm: If False, place z=0 on celestial sphere, if True optimize position of z=0
+               to minimize the number of layers
+    Return:
+        n0: value of direction cosine in N direction at which to optimize error
+        w_values: w values of stack onto which visibilities are gridded
+        dw: Separation between w_values
+    """
+    if symm:
+        n_range = (1-np.sqrt(1-(X_max)**2-(Y_max)**2))/(2*x0)
+        n0 = 1.0 - x0*n_range
+    else:
+        n_range = (1-np.sqrt(1-(X_max)**2-(Y_max)**2))/x0
+        n0 = 1.0        
+    dw = 1.0/n_range
+    nlayers = int(np.ceil((np.max(w) - np.min(w))/dw) + W)
+    wmid = 0.5*(np.max(w) + np.min(w))
+    wrange = (nlayers - 1) * dw
+    w_values = np.linspace(wmid-0.5*wrange, wmid+0.5*wrange, nlayers)
+    print ("We will have", len(w_values), "w-planes")
+    return n0, w_values, dw
+
 def cal_grid_w(w, w_values, idx, dw, W, h, M, x0=0.25):
     """
     For each the given w values, find its W gridding weights
@@ -136,7 +166,57 @@ def cal_grid_w(w, w_values, idx, dw, W, h, M, x0=0.25):
     t_stop = process_time()   
     print("Elapsed time during the w gridding value calculation in seconds:", t_stop-t_start)  
     return C_w
-    
+
+def grid_w_offset(V, u, v, w, C_w, w_values, W, Nw_2R, idx, n0=1.0):
+    """
+    Grid on w-axis modified Sze
+    Args:
+        V (np.narray): visibility data
+        u (np.narray): u of the (u,v,w) coordinates
+        v (np.narray): v of the (u,v,w) coordinates
+        w (np.narray): w of the (u,v,w) coordinates
+        Nw_2R (int): number of w-planes used
+        W (int): support width of the gridding function
+        w_values (list): w values for all w-planes would be formed
+        idx (list): the index of the nearest w plane that this w value would be assigned to
+        dw (float): difference between two neighbouring w-planes
+        C_w (list): the list of gridding weights for the w array
+    """
+    n_uv = len(V)
+    bEAM = np.ones(n_uv)
+    V_wgrid = np.zeros((Nw_2R,1),dtype = np.complex_).tolist()
+    beam_wgrid = np.zeros((Nw_2R,1),dtype = np.complex_).tolist()
+    u_wgrid = np.zeros((Nw_2R,1)).tolist()
+    v_wgrid = np.zeros((Nw_2R,1)).tolist()
+    t_start = process_time() 
+    idx_floor = find_floorw(w_values, w)
+
+    for k in range(n_uv):
+        C_wk = C_w[k]
+        if W % 2 == 1:
+            w_plane = idx[k]
+        else:
+            w_plane = idx_floor[k]
+        j = 0
+        for n in range(-W//2+1,-W//2+1+W):
+            #print (k, w_plane+n, C_wk[j,0], V[k])
+            V_wgrid[w_plane+n] += [C_wk[j,0] * V[k] * np.exp(2j*np.pi*w[k]*(n0-1.0))]
+            u_wgrid[w_plane+n] += [u[k]]
+            v_wgrid[w_plane+n] += [v[k]]
+            beam_wgrid[w_plane+n] += [C_wk[j,0] * bEAM[k] * np.exp(2j*np.pi*w[k]*(n0-1.0))]
+            j+=1
+
+    for i in range(Nw_2R):
+        del(V_wgrid[i][0])
+        del(u_wgrid[i][0])
+        del(v_wgrid[i][0])
+        del(beam_wgrid[i][0])
+
+    t_stop = process_time()   
+    print("Elapsed time during the w-gridding calculation in seconds:", t_stop-t_start)   
+    return V_wgrid, u_wgrid, v_wgrid, beam_wgrid
+
+
 def grid_w(V, u, v, w, C_w, w_values, W, Nw_2R, idx):
     """
     Grid on w-axis
@@ -313,6 +393,33 @@ def image_crop(I, im_size, x0=0.25):
     temp = np.delete(temp,np.s_[0:I_size//2],1)
     return np.delete(temp,np.s_[I_size:index_y],1)
 
+def FFTnPShift_offset(V_grid, ww, X, Y, im_size, x0=0.25, n0=1.0):
+    """
+    FFT the gridded V_grid, and apply a phaseshift to it, modified by Sze
+    Args:
+        V_grid (np.narray): gridded visibility on a certain w-plane
+        ww (np.narray): the value of the w-plane we are working on at the moment
+        im_size (int): the image size, it is to be noted that this is before the image cropping
+        x_0 (float): central 2*x_0*100% of the image will be retained    
+        X (np.narray): X or l in radius on the image plane
+        Y (np.narray): Y or m in radius on the image plane
+    Returns:
+        I (np.narray): the FFT and phaseshifted image
+    """
+    print ('FFTing...')
+    I = np.fft.ifftshift(np.fft.ifftn(np.fft.ifftshift(V_grid)))
+    I_cropped = image_crop(I, im_size)
+    I_size = int(im_size*2*x0)
+    I_FFTnPShift = np.zeros((I_size,I_size),dtype = np.complex_)
+    print ('Phaseshifting...')
+    for l_i in range(0,I_size):
+        for m_i in range(0,I_size):
+            ll = X[l_i]
+            mm = Y[m_i]
+            nn = np.sqrt(1 - ll**2 - mm**2)
+            I_FFTnPShift[l_i,m_i] = np.exp(2j*np.pi*ww*(nn-n0))*I_cropped[l_i,m_i]
+    return I_FFTnPShift
+
 
 def FFTnPShift(V_grid, ww, X, Y, im_size, x0=0.25):
     """
@@ -478,6 +585,33 @@ def int5(h_x, iz, zin, step):
         ans = a0 + a1*zin + a2*zin*zin + a3*zin*zin*zin + a4*zin*zin*zin*zin +a5*zin*zin*zin*zin*zin
     return ans
 
+def z_correct_cal_offset(lut, X_min, X_max, Y_min, Y_max, dw, h, im_size, W, M, x0, n0=1):
+    """
+    Return:
+        Cor_gridz (np.narray): correcting function on z-axis by Sze
+    """ 
+    I_size = int(im_size*2*x0)
+    nu, x = make_evaluation_grids(W, M, I_size)
+    gridder = calc_gridder(h, x0, nu, W, M)
+    grid_correction = gridder_to_grid_correction(gridder, nu, x, W)
+    h_map = np.zeros(im_size, dtype=float)
+    h_map[I_size:] = grid_correction[:I_size]
+    h_map[:I_size] = grid_correction[:0:-1]
+    xrange = X_max - X_min
+    yrange = Y_max - Y_min
+    ny = im_size
+    nx = im_size
+    l_map = np.linspace(X_min, X_max, nx+1)[:nx]/(2*x0)
+    m_map = np.linspace(Y_min, Y_max, ny+1)[:ny]/(2*x0)
+    ll, mm = np.meshgrid(l_map, m_map)
+    # Do not allow NaN or values outside the x0 for the optimal function
+    z = abs(dw*(np.sqrt(np.maximum(0.0, 1. - ll**2 - mm**2))-n0))
+    z[z > x0] = x0 
+
+    fmap = lut.interp(z)
+    Cor_gridz = image_crop(fmap, im_size, x0)
+    return Cor_gridz
+
 def z_correct_cal_old(X_min, X_max, Y_min, Y_max, dw, h, im_size, W, M, x0):
     """
     Return:
@@ -548,7 +682,7 @@ def z_correct_cal(lut, X_min, X_max, Y_min, Y_max, dw, h, im_size, W, M, x0):
     return Cor_gridz
 
 
-def z_correct_cal_other(X_min, X_max, Y_min, Y_max, dw, im_size, W, C, x0=0.25):
+def z_correct_cal_steve(X_min, X_max, Y_min, Y_max, dw, im_size, W, C, x0=0.25):
     """
     Return:
         Cor_gridz (np.narray): correcting function on z-axis using other gridding function, such as spheroidal functrion
