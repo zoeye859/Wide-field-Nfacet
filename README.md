@@ -11,8 +11,7 @@ Please refer to *W-stacking-improved Optimised with offsets (works for both odd 
 
 Please refer to *Sze - New Interpolation on Z - W-stacking-improved Optimised (works for both odd and even W).ipynb*
 
-
-Please refer to *W-stacking-improved Optimised (works for both odd and even W).ipynb*
+**updated early December 2020**: Please refer to *W-stacking-improved Optimised (works for both odd and even W).ipynb*
 
 The *W-stacking-improved Optimised* series jupyter notebooks are ready for you to try out. You can even exchange the gridding function as you like.
 
