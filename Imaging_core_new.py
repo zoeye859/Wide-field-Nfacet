@@ -733,7 +733,7 @@ def z_correct(I, Cor_gridz, im_size, x0=0.25):
 
 def RMS(I_dif, im_size, area_percentage, x0=0.25):
     """
-      Rescale the obtained image
+    Calculate the RMS of the difference map
     Args:
         I_dif (np.ndarray): DFT and FFT image difference
         im_size (int): the image size, it is to be noted that this is before the image cropping
