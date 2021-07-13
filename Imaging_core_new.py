@@ -682,7 +682,7 @@ def z_correct_cal(lut, X_min, X_max, Y_min, Y_max, dw, h, im_size, W, M, x0):
     return Cor_gridz
 
 
-def z_correct_cal_steve(X_min, X_max, Y_min, Y_max, dw, im_size, W, C, x0=0.25):
+def z_correct_cal_other(X_min, X_max, Y_min, Y_max, dw, im_size, W, C, x0=0.25):
     """
     Return:
         Cor_gridz (np.narray): correcting function on z-axis using other gridding function, such as spheroidal functrion

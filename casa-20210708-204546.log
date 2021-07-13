@@ -1,0 +1,8 @@
+2021-07-08 20:46:04	INFO	::casa	
+2021-07-08 20:46:04	INFO	::casa	Checking telemetry submission interval
+2021-07-08 20:46:04	INFO	::casa	Creating a new telemetry time stamp file./home/hye/.casa/telemetry-52a2b446453c2b242a.stamp
+2021-07-08 20:46:04	INFO	::casa	Telemetry submit interval not reached. Not submitting data.
+2021-07-08 20:46:04	INFO	::casa	Next telemetry data submission in: 6 days, 23:59:59.997913
+2021-07-08 20:46:04	INFO	::casa	CASA Version  5.7.0-134  
+2021-07-08 20:46:17	INFO	::casa	
+2021-07-08 20:56:21	SEVERE	open::out.ms	Exception Reported: Table out.ms does not exist
